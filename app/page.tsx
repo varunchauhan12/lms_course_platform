@@ -17,7 +17,6 @@ export default function Home() {
             fetchOptions: {
                 onSuccess: () => {
                     router.push("/login"); // redirect to login page
-                    toast.success("Successfully signed out");
                 },
             },
         })
