@@ -56,12 +56,11 @@ export default function LoginForm() {
                 type: "sign-in",
                 fetchOptions: {
                     onSuccess: () => {
-                        toast.success("Successfully Signed In");
-                        router.push(`/verify-request?q=${email}`);
+                        router.push(`/verify-request?email=${email}`);
                     },
                     onError: () => {
                         toast.error(
-                            `Error signing in with Github: ${"Internal server error"}`
+                            `Error signing in with email: ${"Internal server error"}`
                         );
                     },
                 },
