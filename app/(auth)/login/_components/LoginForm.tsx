@@ -17,13 +17,17 @@ import Link from "next/link";
 import { GithubIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { useTransition } from "react";
+import {useState, useTransition} from "react";
+import {useRouter} from "next/navigation";
 
 
 
 export default function LoginForm() {
 
     const [GithubLoading, startGithubTransition] = useTransition();
+    const [email, setEmail] = useState("");
+    const [emailPending , startEmailTransition] = useTransition();
+    const router = useRouter();
 
     async function SignInWithGithub() {
       startGithubTransition(async () => {
@@ -42,6 +46,27 @@ export default function LoginForm() {
           },
         });
       });
+    }
+
+
+    function SignInWithEmail() {
+        startEmailTransition(async () => {
+            await authClient.emailOtp.sendVerificationOtp({
+                email: email,
+                type: "sign-in",
+                fetchOptions: {
+                    onSuccess: () => {
+                        toast.success("Successfully Signed In");
+                        router.push(`/verify-request?q=${email}`);
+                    },
+                    onError: () => {
+                        toast.error(
+                            `Error signing in with Github: ${"Internal server error"}`
+                        );
+                    },
+                },
+            });
+        });
     }
     return (
       <div>
@@ -76,6 +101,8 @@ export default function LoginForm() {
                   <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                       id="email"
                       type="email"
                       placeholder="m@example.com"
@@ -98,8 +125,15 @@ export default function LoginForm() {
               </form>
             </CardContent>
             <CardFooter className="flex-col gap-2">
-              <Button type="submit" className="w-full">
-                Sign In with Email
+              <Button onClick={SignInWithEmail}  disabled={emailPending} type="submit" className="w-full">
+                  {emailPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                  ): (
+                      <p>Sign in with Email</p>
+                  )}
               </Button>
               <Button
                 disabled={GithubLoading}
