@@ -14,8 +14,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 model User {
   id            String    @id
   name          String
@@ -26,6 +24,7 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  courses       Course[]
 
   @@unique([email])
   @@map("user")
@@ -74,4 +73,34 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+model Course {
+  id               String       @id @default(uuid())
+  title            String
+  description      String
+  fileKey          String
+  price            Float
+  duration         Int
+  level            CourseLevel  @default(BEGINNER)
+  category         String
+  smallDescription String
+  slug             String       @unique
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  status           courseStatus @default(DRAFT)
+  User             User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String?
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum courseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
