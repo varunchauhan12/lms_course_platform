@@ -84,14 +84,11 @@ export default function LoginForm() {
 
         <div>
           <Card>
-            <CardHeader>
-              <CardTitle>Login to your account</CardTitle>
+            <CardHeader className={'flex flex-col items-center text-center'}>
+              <CardTitle >Login to your account</CardTitle>
               <CardDescription>
                 Enter your email below to login to your account
               </CardDescription>
-              <CardAction>
-                <Button variant={"outline"}>Sign Up</Button>
-              </CardAction>
             </CardHeader>
             <CardContent>
               <form>
@@ -108,18 +105,7 @@ export default function LoginForm() {
                       required
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <div className="flex items-center">
-                      <Label htmlFor="password">Password</Label>
-                      <a
-                        href="#"
-                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                      >
-                        Forgot your password?
-                      </a>
-                    </div>
-                    <Input id="password" type="password" required />
-                  </div>
+
                 </div>
               </form>
             </CardContent>

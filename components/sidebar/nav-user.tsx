@@ -1,7 +1,8 @@
 "use client";
 
 import {
-  IconDotsVertical, IconLayoutDashboard,
+  IconDotsVertical,
+  IconLayoutDashboard,
   IconLogout,
 } from "@tabler/icons-react";
 
@@ -34,8 +35,6 @@ export function NavUser() {
   if (isPending) {
     return null;
   }
-
-
 
   return (
     <SidebarMenu>
@@ -110,23 +109,22 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href={"/dashboard"} >
-                  <IconLayoutDashboard/>
+                <Link href={"/dashboard"}>
+                  <IconLayoutDashboard />
                   Dashboard
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={'/courses'}>
-                  <NotebookIcon/>
+                <Link href={"/courses"}>
+                  <NotebookIcon />
                   My Courses
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href={"/account"}>
-                  <PersonStanding/>
+                  <PersonStanding />
                   Account
                 </Link>
-
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

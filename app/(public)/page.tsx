@@ -1,7 +1,10 @@
+"use client";
+
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
 
 interface Featureprops {
   title: string;
@@ -37,6 +40,7 @@ const features: Featureprops[] = [
 ];
 
 export default function Home() {
+  const { data: session } = authClient.useSession();
   return (
     <>
       <section className={"relative py-20"}>
@@ -54,12 +58,14 @@ export default function Home() {
             <Link href={"/courses"} className={buttonVariants({ size: "lg" })}>
               Explore Courses
             </Link>
-            <Link
-              href={"/login"}
-              className={buttonVariants({ size: "lg", variant: "outline" })}
-            >
-              Sign in
-            </Link>
+            {!session && (
+              <Link
+                href={"/login"}
+                className={buttonVariants({ size: "lg", variant: "outline" })}
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </section>
