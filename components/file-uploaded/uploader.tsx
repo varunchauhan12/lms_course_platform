@@ -35,6 +35,9 @@ const Uploader = () => {
       uploading: true,
       progress: 0,
     }));
+
+    try {
+    } catch {}
   }
 
   function FileRejection(filerejection: FileRejection[]) {
