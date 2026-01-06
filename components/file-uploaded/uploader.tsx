@@ -28,7 +28,7 @@ const Uploader = () => {
     error: false,
     fileType: "image",
   });
-  function uploadFile(file: File) {
+  async function uploadFile(file: File) {
     // Upload file logic here
     setFileState((prev) => ({
       ...prev,
@@ -37,17 +37,42 @@ const Uploader = () => {
     }));
 
     try {
+      const presignedUrl = await fetch("/api/s3/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          isImage: true,
+        }),
+      });
+
+      if (!presignedUrl.ok) {
+        toast.error("Failed to get presigned URL");
+        setFileState((prev) => ({
+          ...prev,
+          uploading: false,
+          progress: 0,
+          error: true,
+        }));
+        return;
+      }
+
+      const { presignedUrl, key } = await presignedUrl.json();
     } catch {}
   }
 
   function FileRejection(filerejection: FileRejection[]) {
     if (filerejection.length) {
       const tooManyFiles = filerejection.find(
-        (rejection) => rejection.errors[0].code === "too-many-files",
+        (rejection) => rejection.errors[0].code === "too-many-files"
       );
 
       const fileTooLarge = filerejection.find(
-        (rejection) => rejection.errors[0].code === "file-too-large",
+        (rejection) => rejection.errors[0].code === "file-too-large"
       );
 
       if (fileTooLarge) {
@@ -91,7 +116,7 @@ const Uploader = () => {
         "relative  border-2 border-dashed transition-colors duration-200 ease-in-out w-full h-64 ",
         isDragActive
           ? "border-primary border-solid bg-primary/10 "
-          : "border-border hover:border-primary",
+          : "border-border hover:border-primary"
       )}
       {...getRootProps()}
     >
