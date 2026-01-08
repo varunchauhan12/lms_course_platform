@@ -61,18 +61,18 @@ const Uploader = () => {
         return;
       }
 
-      const { presignedUrl, key } = await presignedUrl.json();
+      const { preSignedUrl, key } = await presignedUrl.json();
     } catch {}
   }
 
   function FileRejection(filerejection: FileRejection[]) {
     if (filerejection.length) {
       const tooManyFiles = filerejection.find(
-        (rejection) => rejection.errors[0].code === "too-many-files"
+        (rejection) => rejection.errors[0].code === "too-many-files",
       );
 
       const fileTooLarge = filerejection.find(
-        (rejection) => rejection.errors[0].code === "file-too-large"
+        (rejection) => rejection.errors[0].code === "file-too-large",
       );
 
       if (fileTooLarge) {
@@ -116,7 +116,7 @@ const Uploader = () => {
         "relative  border-2 border-dashed transition-colors duration-200 ease-in-out w-full h-64 ",
         isDragActive
           ? "border-primary border-solid bg-primary/10 "
-          : "border-border hover:border-primary"
+          : "border-border hover:border-primary",
       )}
       {...getRootProps()}
     >
