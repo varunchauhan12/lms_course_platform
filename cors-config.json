@@ -1,0 +1,14 @@
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": [
+        "http://localhost:3000",
+        "https://your-production-domain.com"
+      ],
+      "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}

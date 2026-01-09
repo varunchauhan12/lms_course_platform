@@ -1,4 +1,3 @@
-import "server-only";
 import ip from "@arcjet/ip";
 import arcjet, {
   type ArcjetDecision,
