@@ -1,6 +1,7 @@
 import React from "react";
-import { CloudUploadIcon, ImageIcon } from "lucide-react";
+import { CloudUploadIcon, ImageIcon, Loader2Icon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 export const RenderEmptyState = ({
   isDragActive,
@@ -17,7 +18,7 @@ export const RenderEmptyState = ({
         <CloudUploadIcon
           className={cn(
             "size-6 text-muted-foreground",
-            isDragActive && "text-primary",
+            isDragActive && "text-primary"
           )}
         />
       </div>
@@ -43,6 +44,45 @@ export const RenderErrorState = () => {
       </div>
       <p className={"text-base font-semibold"}>Upload Failed</p>
       <p className={"text-xs mt-1"}>Something went wrong</p>
+    </div>
+  );
+};
+
+export const RenderSuccessState = ({
+  fileName,
+  fileURL,
+  isDeleting,
+  handleRemove,
+}: {
+  fileName: string;
+  fileURL: string;
+  isDeleting?: boolean;
+  handleRemove?: () => void;
+}) => {
+  return (
+    <div className="flex justify-between items-start gap-4">
+      <div className="text-center max-w-2xs w-full">
+        <img
+          src={fileURL}
+          alt="Uploaded File"
+          className="max-h-48 mx-auto mb-2 rounded-md object-contain"
+        />
+        <p className="break-all text-sm text-muted-foreground">{fileName}</p>
+      </div>
+
+      <Button
+        variant="destructive"
+        size="icon"
+        className="absolute right-4 topo-4"
+        onClick={handleRemove}
+        disabled={isDeleting}
+      >
+        {isDeleting ? (
+          <Loader2Icon className="size-4 animate-spin" />
+        ) : (
+          <XIcon className="size-4" />
+        )}
+      </Button>
     </div>
   );
 };

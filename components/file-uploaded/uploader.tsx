@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FileRejection, useDropzone } from "react-dropzone";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
   RenderEmptyState,
   RenderErrorState,
+  RenderSuccessState,
 } from "@/components/file-uploaded/RenderState";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -16,6 +17,7 @@ interface UploaderProps {
   id: string | null;
   file: File | null;
   uploading: boolean;
+
   progress: number;
   key?: string;
   isDeleting: boolean;
@@ -23,7 +25,13 @@ interface UploaderProps {
   ObjectUrl?: string;
   fileType: "image" | "video";
 }
-const Uploader = () => {
+
+interface iAppProps {
+  value?: string;
+  onChange?: (value: string) => void;
+}
+
+const Uploader = ({ value, onChange }: iAppProps) => {
   const [fileState, setFileState] = useState<UploaderProps>({
     id: null,
     file: null,
@@ -32,7 +40,10 @@ const Uploader = () => {
     isDeleting: false,
     error: false,
     fileType: "image",
+    key: value || "",
   });
+
+  // This is the upload file function which try to get the presigned URL from the s3/upload route and then upload the file to S3 using that URL , it uses XHR to track progress of the upload
 
   async function uploadFile(file: File) {
     // Upload file logic here
@@ -95,6 +106,8 @@ const Uploader = () => {
               key: key,
             }));
 
+            onChange?.(key);
+
             toast.success("File uploaded successfully!");
             resolve(true);
           } else {
@@ -121,6 +134,9 @@ const Uploader = () => {
     }
   }
 
+  // This function handles rejected files when the user tries to upload invalid files
+  // It checks if the file is too large (over 5MB) or if the user tried to upload multiple files
+  // and shows an appropriate error toast message
   function FileRejection(filerejection: FileRejection[]) {
     if (filerejection.length) {
       const tooManyFiles = filerejection.find(
@@ -142,23 +158,97 @@ const Uploader = () => {
       }
     }
   }
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const fileInput = acceptedFiles[0];
+
+  // This function is called when the user drops a file or selects one via the file picker
+  // It creates a preview URL for the image, cleans up the old URL if any, and starts the upload
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        const fileInput = acceptedFiles[0];
+
+        if (fileState.ObjectUrl && !fileState.ObjectUrl.startsWith("http")) {
+          URL.revokeObjectURL(fileState.ObjectUrl);
+        }
+        setFileState({
+          file: fileInput,
+          uploading: false,
+          progress: 0,
+          ObjectUrl: URL.createObjectURL(fileInput),
+          error: false,
+          id: uuidv4(),
+          isDeleting: false,
+          fileType: "image",
+        });
+        uploadFile(fileInput);
+      }
+    },
+    [fileState.ObjectUrl]
+  );
+
+  // This function deletes the uploaded file from S3 storage
+  // It calls the delete API, cleans up the preview URL from memory, and resets the state
+  async function handleRemove() {
+    if (fileState.isDeleting || !fileState.ObjectUrl) {
+      return;
+    }
+
+    try {
+      setFileState((prev) => ({
+        ...prev,
+        isDeleting: true,
+      }));
+
+      const response = await fetch("/api/s3/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          key: fileState.key,
+        }),
+      });
+
+      if (!response.ok) {
+        toast.error("Failed to delete file");
+        setFileState((prev) => ({
+          ...prev,
+          isDeleting: false,
+        }));
+        return;
+      }
+
+      if (fileState.ObjectUrl && !fileState.ObjectUrl.startsWith("http")) {
+        URL.revokeObjectURL(fileState.ObjectUrl);
+      }
+
+      onChange?.("");
+
       setFileState({
-        file: fileInput,
+        id: null,
+        file: null,
         uploading: false,
         progress: 0,
-        ObjectUrl: URL.createObjectURL(fileInput),
-        error: false,
-        id: uuidv4(),
         isDeleting: false,
+        error: false,
+        ObjectUrl: undefined,
         fileType: "image",
       });
-      uploadFile(fileInput);
-    }
-  }, []);
 
+      toast.success("File deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete file");
+      setFileState((prev) => ({
+        ...prev,
+        isDeleting: false,
+      }));
+    }
+  }
+
+  // This function decides what to show in the uploader based on the current state:
+  // - Error state: shows error message
+  // - Uploading: shows progress bar with percentage
+  // - File uploaded: shows the image preview with filename
+  // - Empty: shows the drag & drop prompt
   function renderContent() {
     if (fileState.error) {
       return <RenderErrorState />;
@@ -175,21 +265,26 @@ const Uploader = () => {
 
     if (fileState.file && fileState.ObjectUrl) {
       return (
-        <div className="text-center w-full max-w-xs">
-          <img
-            src={fileState.ObjectUrl}
-            alt="Uploaded File"
-            className="max-h-48 mx-auto mb-2 rounded-md object-contain"
-          />
-          <p className="break-all text-sm text-muted-foreground">
-            {fileState.file.name}
-          </p>
-        </div>
+        <RenderSuccessState
+          fileName={fileState.file.name}
+          fileURL={fileState.ObjectUrl}
+          isDeleting={fileState.isDeleting}
+          handleRemove={handleRemove}
+        />
       );
     }
 
     return <RenderEmptyState isDragActive={isDragActive} />;
   }
+  // Clean up object URL on unmount or when file changes
+
+  useEffect(() => {
+    return () => {
+      if (fileState.ObjectUrl && !fileState.ObjectUrl.startsWith("http")) {
+        URL.revokeObjectURL(fileState.ObjectUrl);
+      }
+    };
+  }, [fileState.ObjectUrl]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -197,6 +292,10 @@ const Uploader = () => {
     accept: { "image/*": [] },
     maxSize: 5 * 1024 * 1024,
     maxFiles: 1,
+    disabled:
+      fileState.uploading ||
+      fileState.isDeleting ||
+      Boolean(fileState.ObjectUrl),
   });
 
   return (
