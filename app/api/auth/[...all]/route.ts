@@ -1,60 +1,14 @@
 import ip from "@arcjet/ip";
-import arcjet, {
+import {
   type ArcjetDecision,
-  type BotOptions,
-  type EmailOptions,
-  type ProtectSignupOptions,
-  type SlidingWindowRateLimitOptions,
   detectBot,
   protectSignup,
-  shield,
   slidingWindow,
 } from "@arcjet/next";
 import { toNextJsHandler } from "better-auth/next-js";
 import { NextRequest } from "next/server";
-import { env } from "@/lib/env";
 import { auth } from "@/lib/auth";
-
-// The arcjet instance is created outside of the handler
-const aj = arcjet({
-  key: env.ARCJET_API_KEY, // Get your site key from https://app.arcjet.com
-  characteristics: ["userId"],
-  rules: [
-    // Protect against common attacks with Arcjet Shield. Other rules are
-    // added dynamically using `withRule`.
-    shield({
-      mode: "LIVE", // will block requests. Use "DRY_RUN" to log only
-    }),
-  ],
-});
-
-const emailOptions = {
-  mode: "LIVE", // will block requests. Use "DRY_RUN" to log only
-  // Block emails that are disposable, invalid, or have no MX records
-  block: ["DISPOSABLE", "INVALID", "NO_MX_RECORDS"],
-} satisfies EmailOptions;
-
-const botOptions = {
-  mode: "LIVE",
-  // configured with a list of bots to allow from
-  // https://arcjet.com/bot-list
-  allow: [], // prevents bots from submitting the form
-} satisfies BotOptions;
-
-const rateLimitOptions = {
-  mode: "LIVE",
-  interval: "2m", // counts requests over a 2 minute sliding window
-  max: 5, // allows 5 submissions within the window
-} satisfies SlidingWindowRateLimitOptions<[]>;
-
-const signupOptions = {
-  email: emailOptions,
-  // uses a sliding window rate limit
-  bots: botOptions,
-  // It would be unusual for a form to be submitted more than 5 times in 10
-  // minutes from the same IP address
-  rateLimit: rateLimitOptions,
-} satisfies ProtectSignupOptions<[]>;
+import aj, { botOptions, rateLimitOptions, signupOptions } from "@/lib/arcjet";
 
 async function protect(req: NextRequest): Promise<ArcjetDecision> {
   const session = await auth.api.getSession({

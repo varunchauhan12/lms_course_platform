@@ -5,6 +5,10 @@ import { env } from "@/lib/env";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3 } from "@/lib/S3Client";
 import { v4 as uuidv4 } from "uuid";
+import { arcjetWithFileUploadRateLimit } from "@/lib/arcjet";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import ip from "@arcjet/ip";
 
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1, { message: "File name is required" }),
@@ -14,14 +18,36 @@ export const fileUploadSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  // Use userId if logged in, otherwise use IP address
+  const userId = session?.user.id || ip(request) || "anonymous";
+
   try {
+    const decision = await arcjetWithFileUploadRateLimit.protect(request, {
+      userId,
+    });
+
+    console.log("Arcjet Upload Decision:", decision);
+
+    if (decision.isDenied()) {
+      if (decision.reason.isRateLimit()) {
+        return NextResponse.json(
+          { error: "Too many upload requests. Please try again later." },
+          { status: 429 },
+        );
+      }
+      return NextResponse.json({ error: "Request denied" }, { status: 403 });
+    }
     const body = await request.json();
     const validation = fileUploadSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid request data" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +68,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "Failed to generate pre-signed URL" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
