@@ -25,10 +25,10 @@ export const courseSchema = z.object({
   price: z.number().min(0, "Price must be a positive number"),
   duration: z.number().min(1, "Duration must be at least 1"),
   level: z.enum(levels, "Level is required"),
-  category: z.enum(courseCategories , "Category is required"),
+  category: z.enum(courseCategories, "Category is required"),
   smallDescription: z.string().min(1, "Small description is required"),
   slug: z.string().min(1, "Slug is required"),
-  courseStatus: z.enum(courseStatus, "Course status is required"),
+  status: z.enum(courseStatus, "Course status is required"),
 });
 
 // Export the output type for use with your form

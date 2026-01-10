@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { ArrowLeft, PlusIcon, SparkleIcon } from "lucide-react";
+import { ArrowLeft, Loader2Icon, PlusIcon, SparkleIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -17,10 +17,11 @@ import {
   levels,
   courseStatus,
 } from "@/lib/zodSchema";
+import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
+import React from "react";
 import {
   Form,
   FormControl,
@@ -40,8 +41,14 @@ import {
 } from "@/components/ui/select";
 import RichTextEditor from "@/components/rich-text-editor/Editor";
 import Uploader from "@/components/file-uploaded/uploader";
+import { tryCatch } from "@/hooks/try-catch";
+import { CreateCourseAction } from "@/app/admin/courses/actions";
+import { useRouter } from "next/navigation";
 
 export default function CreateCoursePage() {
+  const [isPending, startTransition] = React.useTransition();
+  const router = useRouter();
+
   const form = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
@@ -54,13 +61,31 @@ export default function CreateCoursePage() {
       category: "Development",
       smallDescription: "",
       slug: "",
-      courseStatus: "DRAFT",
+      status: "DRAFT",
     },
   });
 
   function onSubmit(values: CourseFormData) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
+    startTransition(async () => {
+      const { data: result, error } = await tryCatch(
+        CreateCourseAction(values),
+      );
+      if (error) {
+        toast.error("Failed to create course. Please try again.");
+        return;
+      }
+
+      if (result?.status === "success") {
+        toast.success("Course created successfully!");
+
+        form.reset();
+        router.push("/admin/courses");
+      } else if (result?.status === "error") {
+        toast.error(`Failed to create course: ${result.message}`);
+      }
+    });
 
     console.log(values);
   }
@@ -258,6 +283,11 @@ export default function CreateCoursePage() {
                           placeholder={"Duration"}
                           type={"number"}
                           {...field}
+                          value={isNaN(field.value) ? "" : field.value}
+                          onChange={(e) => {
+                            const value = e.target.valueAsNumber;
+                            field.onChange(isNaN(value) ? 0 : value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -276,6 +306,11 @@ export default function CreateCoursePage() {
                           placeholder={"Price"}
                           type={"number"}
                           {...field}
+                          value={isNaN(field.value) ? "" : field.value}
+                          onChange={(e) => {
+                            const value = e.target.valueAsNumber;
+                            field.onChange(isNaN(value) ? 0 : value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -309,15 +344,23 @@ export default function CreateCoursePage() {
                     </Select>
                   </FormItem>
                 )}
-                name={"courseStatus"}
+                name={"status"}
                 control={form.control}
               />
-            </form>
 
-            <Button className={"my-5 "}>
-              {" "}
-              Create Course <PlusIcon className={"ml-1"} size={16} />{" "}
-            </Button>
+              <Button type={"submit"} className={"my-5"} disabled={isPending}>
+                {isPending ? (
+                  <>
+                    Creating..
+                    <Loader2Icon className={"animate-spin ml-1"} />
+                  </>
+                ) : (
+                  <>
+                    Create Course <PlusIcon className={"ml-1"} size={16} />
+                  </>
+                )}
+              </Button>
+            </form>
           </Form>
         </CardContent>
       </Card>

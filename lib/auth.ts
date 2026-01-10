@@ -6,6 +6,7 @@ import { resend } from "./resend";
 import { PrismaClient } from "./generated/prisma";
 import { env } from "./env";
 
+// Initializing the prisma client for github using better auth
 const prisma = new PrismaClient();
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -17,6 +18,8 @@ export const auth = betterAuth({
       clientSecret: env.AUTH_GITHUB_SECRET || "",
     },
   },
+
+  // this is resend email OTP plugin configuration useing betterauth
 
   plugins: [
     emailOTP({
