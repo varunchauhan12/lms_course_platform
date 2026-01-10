@@ -1,0 +1,121 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                    QUICK REFERENCE CARD                         │
+│                 Admin & Security Setup                          │
+└─────────────────────────────────────────────────────────────────┘
+
+╔═════════════════════════════════════════════════════════════════╗
+║  STEP 1: SET USER AS ADMIN (REQUIRED!)                          ║
+╚═════════════════════════════════════════════════════════════════╝
+
+Run this command:
+  npx prisma studio
+
+Then:
+  1. Open "User" table
+  2. Find your user
+  3. Set role = "ADMIN" (must be uppercase!)
+  4. Save
+
+Or use SQL:
+  UPDATE "user" SET role = 'ADMIN' WHERE email = 'your@email.com';
+
+⚠️  IMPORTANT: Must be "ADMIN" (uppercase), not "admin" or "Admin"
+
+╔═════════════════════════════════════════════════════════════════╗
+║  FEATURES NOW WORKING                                           ║
+╚═════════════════════════════════════════════════════════════════╝
+
+✅ Arcjet Bot Detection
+   - Automatically detects bots
+   - Check console: "Arcjet Decision: { ... }"
+   - Returns error if bot detected
+
+✅ Rate Limiting
+   - Create course: 5 per 2 minutes
+   - Upload file: 10 per 1 minute
+   - Delete file: 10 per 1 minute
+
+✅ Admin Protection
+   - Server actions → Redirects non-admin to /not-admin
+   - API routes → Returns 403 error for non-admin
+   - You can VIEW pages, but can't SUBMIT without admin
+
+✅ File Upload/Delete
+   - Only admins can upload files
+   - Only admins can delete files
+   - Clear error messages for non-admins
+
+✅ Beautiful Error Page
+   - /not-admin shows nice card with shadcn components
+   - Buttons to go home or login with different account
+
+╔═════════════════════════════════════════════════════════════════╗
+║  HOW TO TEST                                                    ║
+╚═════════════════════════════════════════════════════════════════╝
+
+1. Set role to "ADMIN" in database
+2. Log in to your app
+3. Go to /admin/courses/create
+4. Upload a file → Should work ✅
+5. Delete a file → Should work ✅
+6. Create a course → Should work ✅
+7. Check console for "Arcjet Decision" logs
+
+To test non-admin:
+1. Change role to something else (or NULL)
+2. Try to upload → See "Admin access required" ❌
+3. Try to submit form → Redirect to /not-admin ❌
+
+╔═════════════════════════════════════════════════════════════════╗
+║  ERROR MESSAGES YOU'LL SEE                                      ║
+╚═════════════════════════════════════════════════════════════════╝
+
+File Upload/Delete (API Routes):
+  401 → "Please log in to upload/delete files"
+  403 → "Admin access required to upload/delete files"
+  429 → "Too many requests. Please try again later."
+
+Create Course (Server Action):
+  Not logged in → Redirects to /login
+  Not admin → Redirects to /not-admin
+  Bot detected → "Bot detected. Access denied."
+  Rate limited → "Rate limit exceeded. Please try again later."
+
+╔═════════════════════════════════════════════════════════════════╗
+║  FILES CHANGED                                                  ║
+╚═════════════════════════════════════════════════════════════════╝
+
+Modified:
+  ✅ /app/api/s3/upload/route.ts
+  ✅ /app/api/s3/delete/route.ts
+  ✅ /app/admin/courses/actions.ts
+  ✅ /components/file-uploaded/uploader.tsx
+
+Created:
+  ✅ /app/not-admin/page.tsx
+  ✅ /TESTING_GUIDE.md
+
+╔═════════════════════════════════════════════════════════════════╗
+║  TROUBLESHOOTING                                                ║
+╚═════════════════════════════════════════════════════════════════╝
+
+Problem: "Admin access required"
+  → Check role is "ADMIN" (uppercase) in database
+  → Make sure you're logged in
+  → Clear browser cache and cookies
+
+Problem: "Bot detected"
+  → Normal if using automation tools
+  → Change mode to "DRY_RUN" in /lib/arcjet.ts for testing
+
+Problem: Not redirecting to /not-admin
+  → Make sure you're SUBMITTING the form
+  → requireAdmin() only runs on form submit, not page view
+  → Check role in database
+
+╔═════════════════════════════════════════════════════════════════╗
+║  EVERYTHING IS READY! 🎉                                        ║
+╚═════════════════════════════════════════════════════════════════╝
+
+Just set your role to "ADMIN" and start testing!
+

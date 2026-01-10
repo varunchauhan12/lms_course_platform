@@ -3,19 +3,45 @@
 import { prisma } from "@/lib/db";
 import { ApiResponse } from "@/lib/types";
 import { CourseFormData, courseSchema } from "@/lib/zodSchema";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { requireAdmin } from "@/app/data/admin/require-admin";
+import { arcjetWithBot } from "@/lib/arcjet";
+import { request } from "@arcjet/next";
 
 export async function CreateCourseAction(
   values: CourseFormData,
 ): Promise<ApiResponse> {
-  // Here you would typically handle the form submission,
-  // such as saving the course data to your database.
+  // Check if user is admin - will redirect to /not-admin if not
+  const session = await requireAdmin();
 
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
+    const req = await request();
+
+    // Protect against bots and rate limiting
+    const decision = await arcjetWithBot.protect(req, {
+      userId: session.user.id,
     });
+
+    console.log("Arcjet Decision:", decision);
+
+    if (decision.isDenied()) {
+      if (decision.reason.isRateLimit()) {
+        return {
+          status: "error",
+          message: "Rate limit exceeded. Please try again later.",
+        };
+      }
+      if (decision.reason.isBot()) {
+        return {
+          status: "error",
+          message: "Bot detected. Access denied.",
+        };
+      }
+      return {
+        status: "error",
+        message: "Request denied by security policy.",
+      };
+    }
+
     const validation = courseSchema.safeParse(values);
     if (!validation.success) {
       return {
@@ -27,7 +53,7 @@ export async function CreateCourseAction(
     await prisma.course.create({
       data: {
         ...validation.data,
-        userId: session?.user.id as string,
+        userId: session.user.id,
       },
     });
 

@@ -8,12 +8,27 @@ import { env } from "@/lib/env";
 import ip from "@arcjet/ip";
 
 export async function DELETE(request: Request) {
+  // Check admin status - API routes must return JSON, not redirect
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please log in." },
+      { status: 401 },
+    );
+  }
+
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Forbidden. Admin access required." },
+      { status: 403 },
+    );
+  }
+
   // Use userId if logged in, otherwise use IP address
-  const userId = session?.user.id || ip(request) || "anonymous";
+  const userId = session.user.id || ip(request) || "anonymous";
 
   try {
     const decision = await arcjetWithFileUploadRateLimit.protect(request, {

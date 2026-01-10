@@ -6,9 +6,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3 } from "@/lib/S3Client";
 import { v4 as uuidv4 } from "uuid";
 import { arcjetWithFileUploadRateLimit } from "@/lib/arcjet";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import ip from "@arcjet/ip";
+import { requireAdmin } from "@/app/data/admin/require-admin";
 
 export const fileUploadSchema = z.object({
   fileName: z.string().min(1, { message: "File name is required" }),
@@ -18,9 +17,9 @@ export const fileUploadSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  // Call requireAdmin BEFORE the try-catch block
+  // If user is not admin, this will redirect (throwing a Next.js redirect error)
+  const session = await requireAdmin();
 
   // Use userId if logged in, otherwise use IP address
   const userId = session?.user.id || ip(request) || "anonymous";

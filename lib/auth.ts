@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { emailOTP } from "better-auth/plugins";
+import { admin, emailOTP } from "better-auth/plugins";
 import { resend } from "./resend";
 // Using the custom generated Prisma client path
 import { PrismaClient } from "./generated/prisma";
@@ -32,5 +32,6 @@ export const auth = betterAuth({
         });
       },
     }),
+    admin(),
   ],
 });

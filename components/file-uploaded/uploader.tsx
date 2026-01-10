@@ -209,7 +209,19 @@ const Uploader = ({ value, onChange }: iAppProps) => {
       });
 
       if (!response.ok) {
-        toast.error("Failed to delete file");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to delete file";
+
+        if (response.status === 401) {
+          toast.error("Please log in to delete files");
+        } else if (response.status === 403) {
+          toast.error("Admin access required to delete files");
+        } else if (response.status === 429) {
+          toast.error("Too many delete requests. Please try again later.");
+        } else {
+          toast.error(errorMessage);
+        }
+
         setFileState((prev) => ({
           ...prev,
           isDeleting: false,
